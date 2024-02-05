@@ -37,8 +37,7 @@ class Network(object):
 
 
 
-    def SGD(self, training_data, epochs, mini_batch_size, eta,
-            test_data=None):
+    def SGD(self, training_data, epochs, mini_batch_size, eta,test_data=None):
         if test_data:
             test_data = list(test_data) #crea ina lista de los datos de prueba
             n_test = len(test_data) #obtenemos la longitus de los datos de prueba
@@ -118,8 +117,9 @@ class Network(object):
 
     #def cost_derivative(self, output_activations, y):
         #return (output_activations-y) #derivada de la funcion de costo como para los pesos y los bias es la misma solo se necesita una funcion
-    def cost_derivative(self, output_activations, y):
-        cost=np.sum(y*np.log(output_activations))
+    def cost_derivative(self, output_activations, y, ep=1e-9):
+        N=output_activations.shape[0]
+        cost=np.sum(y*np.log(output_activations+ep))/N
         return (cost)
         
 
