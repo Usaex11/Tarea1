@@ -16,7 +16,8 @@ class Network(object):
         # crea biases y weights de la red de manera aleatoria
         self.biases = [np.random.randn(y, 1) for y in sizes[1:]] #es una lista de matrices de bias una para cada capa excepto la primera
         self.weights = [np.random.randn(y, x) for x, y in zip(sizes[:-1], sizes[1:])] #es una lista de matrices de los weights una para cada conexión entre capas 
-        
+        self.v_w = [np.zeros(w.shape) for w in self.weights] #hay una velocidad asosiada a cada peso y a cada bias con lo que deberian de tener la misma forma
+        self.v_b = [np.zeros(b.shape) for b in self.biases]
 
 
 
@@ -37,23 +38,26 @@ class Network(object):
 
 
 
-    def SGD(self, training_data, epochs, mini_batch_size, eta,test_data=None):
+    def SGD(self, training_data, epochs, mini_batch_size, eta, mo, test_data=None):
         if test_data:
             test_data = list(test_data) #crea ina lista de los datos de prueba
             n_test = len(test_data) #obtenemos la longitus de los datos de prueba
 
         training_data = list(training_data) #convierte los datos de entrenamiento en una lista
         n = len(training_data) #longitus de los datos de entrenamiento
+        
         for j in range(epochs): #es un ciclo que durara la cantidad de epocas que le pongamos 
             random.shuffle(training_data) #barajea aleatoriamente los datos de entrenamiento
-            mini_batches = [
-                training_data[k:k+mini_batch_size]
-                for k in range(0, n, mini_batch_size)] #divide los datos de entrenamiento en pequeños paqquetes de tamaño "mini_batch_size"
+            
+            mini_batches = [training_data[k:k+mini_batch_size] for k in range(0, n, mini_batch_size)] #divide los datos de entrenamiento en pequeños paqquetes de tamaño "mini_batch_size"
+            
             for mini_batch in mini_batches:
-                self.update_mini_batch(mini_batch, eta) #simplemente invoca al metodo update_mini_batch
+                self.update_mini_batch(mini_batch, eta, mo) #se le tuvo que agregar el momento para que pues funcione
+            
             if test_data:
                 print("Epoch {0}: {1} / {2}".format(
                     j, self.evaluate(test_data), n_test))#imprime cuantos aciertos tuvo la red en cada epoca
+            
             else:
                 print("Epoch {0} complete".format(j)) #si no hay datos de entrenamiento dice que ya termino
 
@@ -62,17 +66,21 @@ class Network(object):
 
 
 
-    def update_mini_batch(self, mini_batch, eta):
+    def update_mini_batch(self, mini_batch, eta, mo): #parametro mo de momento xd
         nabla_b = [np.zeros(b.shape) for b in self.biases] #crea una matriz de 0 de la misma forma que la matriz de biases
         nabla_w = [np.zeros(w.shape) for w in self.weights] #crea una matriz de 0 de la misma forma que la matriz de pesos
+        
         for x, y in mini_batch:
             delta_nabla_b, delta_nabla_w = self.backprop(x, y) #calcula los gradientes con la funcion backdrop
             nabla_b = [nb+dnb for nb, dnb in zip(nabla_b, delta_nabla_b)] #una lista de los gradientes de los bias
             nabla_w = [nw+dnw for nw, dnw in zip(nabla_w, delta_nabla_w)] #un alista de los gradientes de los pesos
-        self.weights = [w-(eta/len(mini_batch))*nw
-                        for w, nw in zip(self.weights, nabla_w)] #modifica los pesos 
-        self.biases = [b-(eta/len(mini_batch))*nb
-                       for b, nb in zip(self.biases, nabla_b)] #modifica los bias 
+        
+        self.v_w= [mo*vw-(eta/len(mini_batch))*nw for vw, nw in zip(self.v_w, nabla_w)] #es la lista que actualiza las velocidades esta construida
+        #de esta mnera porque segun yo se tiene que actualizar al mismo tiempo que se modifican los pesos
+        self.weights = [w-(eta/len(mini_batch))*nw for w, nw in zip(self.weights, nabla_w)] #modifica los pesos 
+        
+        self.v_b= [mo*vb-(eta/len(mini_batch))*nb for vb, nb in zip(self.v_b, nabla_w)]
+        self.biases = [b-(eta/len(mini_batch))*nb for b, nb in zip(self.biases, nabla_b)] #modifica los bias 
 
 
 
@@ -117,9 +125,10 @@ class Network(object):
 
     #def cost_derivative(self, output_activations, y):
         #return (output_activations-y) #derivada de la funcion de costo como para los pesos y los bias es la misma solo se necesita una funcion
-    def cost_derivative(self, output_activations, y, ep=1e-9):
+    def cost_derivative(self, output_activations, y, ep=1e-9): 
         N=output_activations.shape[0]
-        cost=np.sum(y*np.log(output_activations+ep))/N
+        cost=np.sum(y*np.log(output_activations+ep))/N #La furmula matematica es sum(todas las anteriores predicciones log de los outputs de las neuronas)
+        #al entrenar demasiado lento encontre que si se dividia entre N(numero de outputs de las neuronas) y se le agregaba un epsilon para que no empezara en 0 y fuer mas rapido era una solucion
         return (cost)
         
 
