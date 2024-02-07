@@ -1,1 +1,2 @@
-no sabia que podia subir archivos entonces en el primer commit solo copie y pegue xd pero juro que lo hice yo
+Tarea 2 o bueno tecnicamente 3 donde se le aplico un cambio en la funcion de costo en este caso se cambio a cross-entropy con neurona sigmoide, y tambien se le aplico la funcion de optimizacion SDG con momento porque crei y creo que es de las mas faciles de aplicar ya que el resto no sabia muy bien pese a entender las matematicas como implementarlo al codigo la verdad es que me hace falta mas practica programando
+
